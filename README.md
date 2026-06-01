@@ -1,36 +1,64 @@
 ![Scriptable](https://img.shields.io/badge/Scriptable-iOS-blue)
 ![Shoper](https://img.shields.io/badge/Shoper-API-green)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
 # scriptable-shoper
 
 ![Podgląd projektu](assets/shoper_widgets.png)
 
-# Widget Shoper dla Scriptable
+## Widgety Shoper dla Scriptable
 
-Widget pokazuje podstawowe dane sprzedażowe z API Shopera bezpośrednio na ekranie iPhone’a lub iPada.
+Widgety pokazują najważniejsze z punktu właściela/administratora/marketingowca dane z API Shopera bezpośrednio na ekranie iPhone’a lub iPada. Czas odświeżenia każdej aplikacji można ustalić w skrypcie - `REFRESH_MINUTES` lub wymusić ręcznie za pomocą aplikacji Scriptable.
 
-Pokazywane dane:
-
-- liczba zamówień dzisiaj,
-- sprzedaż dzisiaj,
-- średni koszyk,
-- wykres sprzedaży z ostatnich 30 dni.
 
 ---
 
-## Dostępne wersje skryptu
+## Spis treści
 
-W repozytorium znajdują się dwie wersje widgetu:
+- [Kategorie widgetów](#kategorie-widgetów)
+  - [Sprzedaż](#sprzedaż)
+    - [`shoper_1.js`](#shoper_1js)
+    - [`shoper_big.js`](#shoper_bigjs)
+- [Instrukcja instalacji widgetu Shoper w Scriptable](#instrukcja-instalacji-widgetu-shoper-w-scriptable)
+  - [1. Wymagania](#1-wymagania)
+  - [2. Przygotowanie danych API w Shoperze](#2-przygotowanie-danych-api-w-shoperze)
+  - [3. Zapisanie Client ID i Token API w Keychain Scriptable](#3-zapisanie-client-id-i-token-api-w-keychain-scriptable)
+  - [4. Przygotowanie głównego skryptu widgetu](#4-przygotowanie-głównego-skryptu-widgetu)
+  - [5. Tryb danych demo](#5-tryb-danych-demo)
+  - [6. Test działania w Scriptable](#6-test-działania-w-scriptable)
+  - [7. Dodanie widgetu na ekran iPhone’a](#7-dodanie-widgetu-na-ekran-iphonea)
+- [Najczęstsze problemy](#najczęstsze-problemy)
+- [Bezpieczeństwo](#bezpieczeństwo)
+- [Opcje modyfikacji](#opcje-modyfikacji)
+- [Licencja](#licencja)
+
+---
+
+## Kategorie widgetów
+
+Z czasem repozytorium zostanie rozbudowane o nowe widgety.
+
+### Sprzedaż
+
+Widgety z tej kategorii pokazują dane sprzedażowe sklepu, takie jak zamówienia, przychód, średni koszyk i podsumowanie ostatnich 30 dni.
+
+| Plik | Kategoria | Rozmiary widgetu | Motywy | Opis |
+|---|---|---|---|---|
+| [shoper_1.js](widgety/shoper_1.js) | Sprzedaż | `medium` lub `large` | `day` lub `night` | Uniwersalna wersja widgetu. W trybie `large` zawiera wykres sprzedaży z ostatnich 30 dni. |
+| [shoper_big.js](widgety/shoper_big.js) | Sprzedaż | tylko `large` | `day` lub `night` | Duży, czytelny widget sprzedażowy bez wersji `medium`. |
 
 
-| Plik | Rozmiary widgetu | Motywy |
-|---|---|---|
-| [shoper_1.js](widgety/shoper_1.js) | `medium` lub `large` | `day` lub `night` |
-| [shoper_big.js](widgety/shoper_big.js) | tylko `large` | `day` lub `night` |
+---
+
+## Dostępne widgety sprzedażowe
+
+W repozytorium znajdują się dwie wersje widgetu sprzedażowego.
 
 ### `shoper_1.js`
+
 ![Podgląd shoper_1](assets/shoper_1.png)
-To główna, bardziej uniwersalna wersja widgetu. w wersji `large` posiada wykres z ostatnich 30 dni.
+
+To główna, bardziej uniwersalna wersja widgetu. W wersji `large` posiada wykres z ostatnich 30 dni.
 
 Pozwala zmieniać:
 
@@ -42,16 +70,16 @@ const THEME = "night" // "night" albo "day"
 Możesz więc używać tego samego skryptu jako widgetu średniego albo dużego.
 
 ### `shoper_big.js`
+
 ![Podgląd shoper_big](assets/shoper_big.png)
-To wersja przygotowana wyłącznie pod duży widget. Nie posiada wykresu, a dane na nim przedstawione są czytelniejsze
+
+To wersja przygotowana wyłącznie pod duży widget. Posiada jedynie wersję `large`, a dane są przedstawione w dużym, czytelnym układzie.
 
 Ten plik obsługuje tylko rozmiar:
 
 ```javascript
 const WIDGET_SIZE = "large"
 ```
-
-Nie ma wersji `medium`.
 
 Można natomiast zmieniać motyw:
 
@@ -61,9 +89,9 @@ const THEME = "night" // "night" albo "day"
 
 ---
 
-# Instrukcja instalacji widgetu Shoper w Scriptable
+## Instrukcja instalacji widgetu Shoper w Scriptable
 
-## 1. Wymagania
+### 1. Wymagania
 
 Do działania potrzebujesz:
 
@@ -76,16 +104,19 @@ Do działania potrzebujesz:
 
 ---
 
-## 2. Przygotowanie danych API w Shoperze
+### 2. Przygotowanie danych API w Shoperze
 
 W panelu Shopera wygeneruj dane dla zewnętrznej aplikacji API.
 
-Wymagane uprawnienia:
+Wymagane uprawnienia zależą od kategorii widgetów, których chcesz używać.
 
-| Obszar | Uprawnienie |
-|---|---|
-| Zamówienia | Odczyt |
+Na ten moment repozytorium zawiera widgety z kategorii **Sprzedaż**, dlatego do ich działania potrzebny jest wyłącznie dostęp do odczytu zamówień.
 
+| Kategoria widgetu | Obszar API Shopera | Wymagane uprawnienie | Dotyczy plików |
+|---|---|---|---|
+| Sprzedaż | Zamówienia | Odczyt | `shoper_1.js`, `shoper_big.js` |
+
+Nie nadawaj aplikacji większych uprawnień, niż są potrzebne do działania wybranego widgetu. Dla widgetów sprzedażowych wystarczy sam odczyt zamówień.
 Po wygenerowaniu danych zapisz sobie:
 
 ```text
@@ -93,11 +124,11 @@ Client ID
 Token API
 ```
 
-Nie wrzucaj tych danych bezpośrednio do skryptu!
+Nie wrzucaj tych danych bezpośrednio do skryptu.
 
 ---
 
-## 3. Zapisanie Client ID i Token API w Keychain Scriptable
+### 3. Zapisanie Client ID i Token API w Keychain Scriptable
 
 W Scriptable utwórz nowy skrypt, np.:
 
@@ -130,7 +161,7 @@ const SHOPER_API_TOKEN_KEY = "shoper_api_token"
 
 ---
 
-## 4. Przygotowanie głównego skryptu widgetu
+### 4. Przygotowanie głównego skryptu widgetu
 
 W Scriptable utwórz drugi skrypt, np.:
 
@@ -189,7 +220,7 @@ const SHOP_BASE_URL = "https://twojsklep.pl"
 
 ---
 
-## 5. Tryb danych demo
+### 5. Tryb danych demo
 
 W obu wersjach widgetu można użyć trybu demonstracyjnego:
 
@@ -227,7 +258,7 @@ const USE_DEMO_DATA = false
 
 ---
 
-## 6. Test działania w Scriptable
+### 6. Test działania w Scriptable
 
 Po wklejeniu kodu uruchom skrypt w Scriptable przyciskiem ▶️.
 
@@ -244,7 +275,7 @@ Jeżeli pojawi się błąd, sprawdź:
 
 ---
 
-## 7. Dodanie widgetu na ekran iPhone’a
+### 7. Dodanie widgetu na ekran iPhone’a
 
 1. Przytrzymaj palec na ekranie głównym iPhone’a.
 2. Kliknij `+` w lewym górnym rogu.
@@ -258,7 +289,7 @@ Jeżeli pojawi się błąd, sprawdź:
 
 ---
 
-## 8. Najczęstsze problemy
+## Najczęstsze problemy
 
 ### Widget pokazuje dane przykładowe zamiast prawdziwych
 
@@ -318,7 +349,7 @@ Najczęściej oznacza:
 
 ---
 
-## 9. Bezpieczeństwo
+## Bezpieczeństwo
 
 Nie zapisuj danych API w pliku JS, który trafia na GitHub.
 
@@ -335,7 +366,7 @@ Tryb demo nie wymaga danych API, ale nie zastępuje prawdziwej integracji z Shop
 
 ---
 
-## 10. Opcje modyfikacji
+## Opcje modyfikacji
 
 ### `shoper_1.js`
 
@@ -358,3 +389,7 @@ Tryb demo nie wymaga danych API, ale nie zastępuje prawdziwej integracji z Shop
 | `REFRESH_MINUTES` | `120` |
 
 ---
+
+## Licencja
+
+Projekt jest udostępniony na licencji MIT. Szczegóły znajdziesz w pliku [LICENSE](LICENSE).
