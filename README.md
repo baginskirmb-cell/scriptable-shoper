@@ -44,8 +44,8 @@ Widgety z tej kategorii pokazują dane sprzedażowe sklepu, takie jak zamówieni
 
 | Plik | Kategoria | Rozmiary widgetu | Motywy | Opis |
 |---|---|---|---|---|
-| [shoper_1.js](widgety/shoper_1.js) | Sprzedaż | `medium` lub `large` | `day` lub `night` | Uniwersalna wersja widgetu. W trybie `large` zawiera wykres sprzedaży z ostatnich 30 dni. |
-| [shoper_big.js](widgety/shoper_big.js) | Sprzedaż | tylko `large` | `day` lub `night` | Duży, czytelny widget sprzedażowy bez wersji `medium`. |
+| [shoper_1.js](widgety/shoper_1.js) | Sprzedaż | `medium`/`large` | `day`/`night` | Uniwersalna wersja widgetu. W trybie `large` zawiera wykres sprzedaży z ostatnich 30 dni. |
+| [shoper_big.js](widgety/shoper_big.js) | Sprzedaż | `large` | `day`/`night` | Duży, czytelny widget sprzedażowy bez wersji `medium`. |
 
 
 ---
