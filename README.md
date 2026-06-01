@@ -19,13 +19,14 @@ Pokazywane dane:
 
 W repozytorium znajdują się dwie wersje widgetu:
 
+
 | Plik | Rozmiary widgetu | Motywy |
 |---|---|---|
-| `shoper_1.js` | `medium` lub `large` | `day` lub `night` |
-| `shoper_big.js` | tylko `large` | `day` lub `night` |
+| [shoper_1.js](widgety/shoper_1.js) | `medium` lub `large` | `day` lub `night` |
+| [shoper_big.js](widgety/shoper_big.js) | tylko `large` | `day` lub `night` |
 
 ### `shoper_1.js`
-
+![Podgląd shoper_1](assets/shoper_1.png)
 To główna, bardziej uniwersalna wersja widgetu. w wersji `large` posiada wykres z ostatnich 30 dni.
 
 Pozwala zmieniać:
@@ -38,7 +39,7 @@ const THEME = "night" // "night" albo "day"
 Możesz więc używać tego samego skryptu jako widgetu średniego albo dużego.
 
 ### `shoper_big.js`
-
+![Podgląd shoper_big](assets/shoper_big.png)
 To wersja przygotowana wyłącznie pod duży widget. Nie posiada wykresu, a dane na nim przedstawione są czytelniejsze
 
 Ten plik obsługuje tylko rozmiar:
