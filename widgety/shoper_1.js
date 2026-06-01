@@ -1,7 +1,7 @@
 const WIDGET_SIZE = "large" // "medium" albo "large"
 const THEME = "night" // "night" albo "day"
 
-const USE_DEMO_DATA = true
+const USE_DEMO_DATA = false
 const DEBUG_API = false
 
 const SHOP_BASE_URL = "https://twoj_sklep.pl"
