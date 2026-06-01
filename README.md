@@ -1,3 +1,6 @@
+![Scriptable](https://img.shields.io/badge/Scriptable-iOS-blue)
+![Shoper](https://img.shields.io/badge/Shoper-API-green)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 # scriptable-shoper
 
 ![Podgląd projektu](assets/shoper_widgets.png)
