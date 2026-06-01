@@ -1,356 +1,1188 @@
-# scriptable-shoper
+const THEME = "day" // "night" albo "day"
 
-![Podgląd projektu](assets/shoper_widgets.png)
+const USE_DEMO_DATA = true
+const DEBUG_API = false
 
-# Widget Shoper dla Scriptable
+const SHOP_BASE_URL = "https://twoj_sklep.pl"
+const ORDERS_ENDPOINT = "/webapi/rest/orders"
 
-Widget pokazuje podstawowe dane sprzedażowe z API Shopera bezpośrednio na ekranie iPhone’a lub iPada.
-
-Pokazywane dane:
-
-- liczba zamówień dzisiaj,
-- sprzedaż dzisiaj,
-- średni koszyk,
-- wykres sprzedaży z ostatnich 30 dni.
-
----
-
-## Dostępne wersje skryptu
-
-W repozytorium znajdują się dwie wersje widgetu:
-
-| Plik | Rozmiary widgetu | Motywy |
-|---|---|---|
-| `shoper_1.js` | `medium` lub `large` | `day` lub `night` |
-| `shoper_big.js` | tylko `large` | `day` lub `night` |
-
-### `shoper_1.js`
-
-To główna, bardziej uniwersalna wersja widgetu. w wersji `large` posiada wykres z ostatnich 30 dni.
-
-Pozwala zmieniać:
-
-```javascript
-const WIDGET_SIZE = "medium" // "medium" albo "large"
-const THEME = "night" // "night" albo "day"
-```
-
-Możesz więc używać tego samego skryptu jako widgetu średniego albo dużego.
-
-### `shoper_big.js`
-
-To wersja przygotowana wyłącznie pod duży widget. Nie posiada wykresu, a dane na nim przedstawione są czytelniejsze
-
-Ten plik obsługuje tylko rozmiar:
-
-```javascript
-const WIDGET_SIZE = "large"
-```
-
-Nie ma wersji `medium`.
-
-Można natomiast zmieniać motyw:
-
-```javascript
-const THEME = "night" // "night" albo "day"
-```
-
----
-
-# Instrukcja instalacji widgetu Shoper w Scriptable
-
-## 1. Wymagania
-
-Do działania potrzebujesz:
-
-- iPhone’a lub iPada,
-- aplikacji **Scriptable** z App Store,
-- danych API Shopera:
-  - **Client ID**,
-  - **Token API**,
-- jednego z gotowych skryptów JS z tego repozytorium.
-
----
-
-## 2. Przygotowanie danych API w Shoperze
-
-W panelu Shopera wygeneruj dane dla zewnętrznej aplikacji API.
-
-Wymagane uprawnienia:
-
-| Obszar | Uprawnienie |
-|---|---|
-| Zamówienia | Odczyt |
-
-Po wygenerowaniu danych zapisz sobie:
-
-```text
-Client ID
-Token API
-```
-
-Nie wrzucaj tych danych bezpośrednio do skryptu ani do repozytorium.
-
----
-
-## 3. Zapisanie Client ID i Token API w Keychain Scriptable
-
-W Scriptable utwórz nowy skrypt, np.:
-
-```text
-Shoper API Keychain Setup
-```
-
-Wklej do niego:
-
-```javascript
-Keychain.set("shoper_client_id", "TUTAJ_WKLEJ_CLIENT_ID")
-Keychain.set("shoper_api_token", "TUTAJ_WKLEJ_TOKEN_API")
-```
-
-Przykład:
-
-```javascript
-Keychain.set("shoper_client_id", "abc123")
-Keychain.set("shoper_api_token", "token_z_panelu_shopera")
-```
-
-Uruchom ten skrypt **raz** przyciskiem ▶️.
-
-Po uruchomieniu dane zostaną zapisane w Keychain aplikacji Scriptable i główny widget będzie mógł je odczytać przez:
-
-```javascript
 const SHOPER_CLIENT_ID_KEY = "shoper_client_id"
 const SHOPER_API_TOKEN_KEY = "shoper_api_token"
-```
 
----
+const AUTH_MODE = "bearer_token"
+
+const DAYS_TO_SHOW = 30
+const REFRESH_MINUTES = 120
+const MAX_PAGES = 4
+const PAGE_LIMIT = 50
+const USE_DATE_FILTER = true
+
+const EXCLUDED_STATUS_KEYWORDS = ["anul", "cancel", "cancelled", "zwrot", "refunded"]
+
+const CFG = {
+  width: 1092,
+  height: 1146,
+  cornerRadius: 86
+}
+
+const THEMES = {
+  night: {
+    bg: "#06111b",
+    bgDeep: "#030911",
+    bgGlowBlue: "#0b2944",
+    bgGlowGreen: "#123d25",
+    panel: "#0b1621",
+    panelBorder: "#ffffff",
+    text: "#f5f7fb",
+    subtext: "#b8c1ce",
+    muted: "#7e8a99",
+    green: "#58f04f",
+    greenSoft: "#9af26f",
+    line: "#253646",
+    baseAlpha: 1,
+    deepAlpha: 0.34,
+    panelAlpha: 0.40,
+    borderAlpha: 0.16,
+    topGlassAlpha: 0.025,
+    cardBorderAlpha: 0.14,
+    shadowAlpha: 0.22
+  },
+  day: {
+    bg: "#f5f8fc",
+    bgDeep: "#eaf1f8",
+    bgGlowBlue: "#d8e9fb",
+    bgGlowGreen: "#c9f3dc",
+    panel: "#ffffff",
+    panelBorder: "#0f172a",
+    text: "#102033",
+    subtext: "#5f6b7a",
+    muted: "#8a96a6",
+    green: "#16a34a",
+    greenSoft: "#22c55e",
+    line: "#cbd5e1",
+    baseAlpha: 1,
+    deepAlpha: 0.22,
+    panelAlpha: 0.62,
+    borderAlpha: 0.11,
+    topGlassAlpha: 0.11,
+    cardBorderAlpha: 0.11,
+    shadowAlpha: 0.10
+  }
+}
+
+const COLORS = THEMES[THEME]
+
+let AUTH_HEADERS_CACHE = null
+let AUTH_MODE_USED = "API"
+
+function getCredentials() {
+  const clientId = Keychain.get(SHOPER_CLIENT_ID_KEY)
+  const apiToken = Keychain.get(SHOPER_API_TOKEN_KEY)
+
+  if ((!clientId || !apiToken) && !USE_DEMO_DATA) {
+    throw new Error("Brak danych API w Keychain: " + SHOPER_CLIENT_ID_KEY + " / " + SHOPER_API_TOKEN_KEY)
+  }
+
+  return { clientId: clientId, apiToken: apiToken }
+}
+
+function base64(value) {
+  return Data.fromString(value).toBase64String()
+}
+
+function baseHeaders() {
+  return {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    "User-Agent": "Scriptable Shoper Sales Widget"
+  }
+}
+
+function getShopNameFromUrl() {
+  return SHOP_BASE_URL
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\/$/, "")
+}
+
+function buildAuthUrl() {
+  return SHOP_BASE_URL + "/webapi/rest/auth"
+}
+
+function startOfLocalDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function addDays(date, days) {
+  const d = new Date(date)
+  d.setDate(d.getDate() + days)
+  return d
+}
+
+function formatApiDate(date, endOfDay) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, "0")
+  const d = String(date.getDate()).padStart(2, "0")
+  const t = endOfDay ? "23:59:59" : "00:00:00"
+  return y + "-" + m + "-" + d + " " + t
+}
+
+function buildOrdersUrl(page) {
+  const params = ["limit=" + PAGE_LIMIT, "page=" + page]
+
+  if (USE_DATE_FILTER) {
+    const today = startOfLocalDay(new Date())
+    const firstDay = addDays(today, -(DAYS_TO_SHOW - 1))
+
+    const filters = { date: {} }
+    filters.date[">="] = formatApiDate(firstDay, false)
+
+    params.push("filters=" + encodeURIComponent(JSON.stringify(filters)))
+  }
+
+  return SHOP_BASE_URL + ORDERS_ENDPOINT + "?" + params.join("&")
+}
+
+async function apiRequestJSON(url, headers, method, body) {
+  const req = new Request(url)
+  req.method = method || "GET"
+  req.timeoutInterval = 15
+  req.headers = headers
+
+  if (body !== null && body !== undefined) {
+    req.body = body
+  }
+
+  let text = ""
+
+  try {
+    text = await req.loadString()
+  } catch (e) {
+    const status = req.response && req.response.statusCode ? req.response.statusCode : 0
+    return { ok: false, status: status, json: null, text: String(e.message || e) }
+  }
+
+  const status = req.response && req.response.statusCode ? req.response.statusCode : 0
+
+  let json = null
+
+  try {
+    json = JSON.parse(text)
+  } catch (e) {
+    json = null
+  }
+
+  return {
+    ok: status >= 200 && status < 300,
+    status: status,
+    json: json,
+    text: text
+  }
+}
+
+function shortBody(text) {
+  if (!text) return ""
+  return String(text).replace(/\s+/g, " ").slice(0, 180)
+}
+
+function readDeep(obj, path) {
+  try {
+    return path.split(".").reduce(function(acc, key) {
+      return acc && acc[key]
+    }, obj)
+  } catch (e) {
+    return null
+  }
+}
+
+function firstValue(obj, fields) {
+  for (let i = 0; i < fields.length; i++) {
+    const field = fields[i]
+    const value = field.indexOf(".") >= 0 ? readDeep(obj, field) : obj[field]
 
-## 4. Przygotowanie głównego skryptu widgetu
-
-W Scriptable utwórz drugi skrypt, np.:
-
-```text
-Shoper Widget
-```
-
-Wklej do niego cały kod wybranego widgetu:
-
-- `shoper_1.js` — jeżeli chcesz mieć możliwość wyboru `medium` albo `large`,
-- `shoper_big.js` — jeżeli chcesz używać tylko dużego widgetu.
-
-Na początku skryptu ustaw najważniejsze opcje.
-
-Dla `shoper_1.js`:
-
-```javascript
-const WIDGET_SIZE = "medium" // "medium" albo "large"
-const THEME = "night" // "night" albo "day"
-
-const USE_DEMO_DATA = false // true = dane testowe, false = dane z API Shopera
-
-const SHOP_BASE_URL = "https://domena_twojego_sklepu.pl"
-```
-
-Jeżeli chcesz wersję dużą w `shoper_1.js`, zmień:
-
-```javascript
-const WIDGET_SIZE = "large"
-```
-
-Jeżeli chcesz jasny motyw pod iOS, zmień:
-
-```javascript
-const THEME = "day"
-```
-
-Dla `shoper_big.js` rozmiar widgetu jest ustawiony na `large`. Możesz zmieniać motyw oraz tryb danych demo:
-
-```javascript
-const THEME = "night" // "night" albo "day"
-const USE_DEMO_DATA = false // true = dane testowe, false = dane z API Shopera
-```
-
-Adres sklepu ustaw w obu wersjach tak samo:
-
-```javascript
-const SHOP_BASE_URL = "https://domena_twojego_sklepu.pl"
-```
-
-Przykład:
-
-```javascript
-const SHOP_BASE_URL = "https://twojsklep.pl"
-```
-
----
-
-## 5. Tryb danych demo
-
-W obu wersjach widgetu można użyć trybu demonstracyjnego:
-
-```javascript
-const USE_DEMO_DATA = true
-```
-
-Domyślnie tryb demo powinien być wyłączony:
-
-```javascript
-const USE_DEMO_DATA = false
-```
-
-Tryb demo służy do testowania wyglądu widgetu bez łączenia się z API Shopera. Po ustawieniu:
-
-```javascript
-const USE_DEMO_DATA = true
-```
-
-widget pokaże przykładowe dane sprzedażowe zamiast prawdziwych danych z API.
-
-To przydatne, gdy chcesz:
-
-- sprawdzić wygląd widgetu przed podłączeniem API,
-- zrobić zrzut ekranu do README,
-- przetestować wersję `day` albo `night`,
-- sprawdzić układ `medium` albo `large`,
-- pokazać widget komuś bez udostępniania danych sprzedażowych.
-
-W normalnym użyciu zostaw:
-
-```javascript
-const USE_DEMO_DATA = false
-```
-
----
-
-## 6. Test działania w Scriptable
-
-Po wklejeniu kodu uruchom skrypt w Scriptable przyciskiem ▶️.
-
-Jeżeli wszystko działa, zobaczysz podgląd widgetu.
-
-Jeżeli pojawi się błąd, sprawdź:
-
-- czy `SHOP_BASE_URL` jest poprawny,
-- czy Client ID i Token API są zapisane w Keychain,
-- czy token API ma dostęp do zamówień,
-- czy sklep ma aktywne API,
-- czy endpoint `/webapi/rest/orders` działa,
-- czy `USE_DEMO_DATA` nie jest przypadkiem ustawione na `true`, jeśli oczekujesz prawdziwych danych.
-
----
-
-## 7. Dodanie widgetu na ekran iPhone’a
-
-1. Przytrzymaj palec na ekranie głównym iPhone’a.
-2. Kliknij `+` w lewym górnym rogu.
-3. Wyszukaj **Scriptable**.
-4. Wybierz rozmiar widgetu:
-   - **Medium** — dla `shoper_1.js` z ustawieniem `WIDGET_SIZE = "medium"`,
-   - **Large** — dla `shoper_1.js` z ustawieniem `WIDGET_SIZE = "large"` albo dla `shoper_big.js`.
-5. Dodaj widget do ekranu.
-6. Przytrzymaj widget i wybierz **Edit Widget**.
-7. W polu **Script** wybierz swój skrypt, np. `Shoper Widget`.
-
----
-
-## 8. Najczęstsze problemy
-
-### Widget pokazuje dane przykładowe zamiast prawdziwych
-
-Najczęściej oznacza to, że w kodzie aktywny jest tryb demo:
-
-```javascript
-const USE_DEMO_DATA = true
-```
-
-Aby pobierać prawdziwe dane z API Shopera, ustaw:
-
-```javascript
-const USE_DEMO_DATA = false
-```
-
----
-
-### Widget pokazuje `0 zł`
-
-Możliwe przyczyny:
-
-- sklep nie miał sprzedaży w ostatnich 30 dniach,
-- API zwraca inne pola kwoty lub daty,
-- token nie ma dostępu do zamówień,
-- filtr daty w API nie działa poprawnie,
-- `USE_DEMO_DATA` jest ustawione na `false`, ale API nie zwraca danych.
-
-Wtedy w kodzie ustaw tymczasowo:
-
-```javascript
-const DEBUG_API = true
-```
-
-Uruchom skrypt w Scriptable i sprawdź logi.
-
----
-
-### Błąd 401 / 403
-
-Najczęściej oznacza:
-
-- błędny Client ID,
-- błędny Token API,
-- brak uprawnień do zamówień,
-- token został usunięty lub wygasł.
-
----
-
-### Błąd 404
-
-Najczęściej oznacza:
-
-- zły adres sklepu w `SHOP_BASE_URL`,
-- API nie działa pod podanym adresem,
-- endpoint `/webapi/rest/orders` jest niedostępny,
-- Shoper odrzucił parametry filtrowania.
-
----
-
-## 9. Bezpieczeństwo
-
-Nie zapisuj danych API w pliku JS, który trafia na GitHub.
-
-Zawsze używaj Keychain:
-
-```javascript
-Keychain.set("shoper_client_id", "...")
-Keychain.set("shoper_api_token", "...")
-```
-
-Dzięki temu repozytorium może być publiczne, a dane API pozostają tylko na Twoim urządzeniu.
-
-Tryb demo nie wymaga danych API, ale nie zastępuje prawdziwej integracji z Shoperem. Służy wyłącznie do testowania wyglądu i prezentacji widgetu.
-
----
-
-## 10. Opcje modyfikacji
-
-### `shoper_1.js`
-
-| Zmienna | Wartość |
-|---|---|
-| `WIDGET_SIZE` | `medium` lub `large` |
-| `THEME` | `night` lub `day` |
-| `USE_DEMO_DATA` | `false` lub `true` |
-| `DAYS_TO_SHOW` | `30` |
-| `REFRESH_MINUTES` | `120` |
-
-### `shoper_big.js`
-
-| Zmienna | Wartość |
-|---|---|
-| `WIDGET_SIZE` | tylko `large` |
-| `THEME` | `night` lub `day` |
-| `USE_DEMO_DATA` | `false` lub `true` |
-| `DAYS_TO_SHOW` | `30` |
-| `REFRESH_MINUTES` | `120` |
-
----
+    if (value !== undefined && value !== null && value !== "") {
+      return value
+    }
+  }
+
+  return null
+}
+
+function getTokenFromAuthResponse(json) {
+  if (!json) return null
+
+  return firstValue(json, [
+    "access_token",
+    "accessToken",
+    "token",
+    "data.access_token",
+    "data.accessToken",
+    "data.token",
+    "result.access_token",
+    "result.accessToken",
+    "result.token"
+  ])
+}
+
+async function getAccessTokenViaAuthEndpoint(clientId, apiToken) {
+  const headers = baseHeaders()
+  headers.Authorization = "Basic " + base64(clientId + ":" + apiToken)
+
+  const res = await apiRequestJSON(buildAuthUrl(), headers, "POST", "")
+
+  if (!res.ok) {
+    throw new Error("auth_endpoint " + res.status + ": " + shortBody(res.text))
+  }
+
+  const token = getTokenFromAuthResponse(res.json)
+
+  if (!token) {
+    throw new Error("auth_endpoint: brak access_token w odpowiedzi")
+  }
+
+  return token
+}
+
+async function testAuthHeaders(headers) {
+  const res = await apiRequestJSON(buildOrdersUrl(1), headers, "GET", null)
+
+  if (!res.ok) {
+    throw new Error(res.status + ": " + shortBody(res.text))
+  }
+
+  const list = extractOrderArray(res.json)
+
+  if (!Array.isArray(list)) {
+    throw new Error("odpowiedź OK, ale nie znaleziono listy zamówień")
+  }
+
+  return true
+}
+
+async function getWorkingAuthHeaders() {
+  if (AUTH_HEADERS_CACHE) return AUTH_HEADERS_CACHE
+
+  const cred = getCredentials()
+
+  if (AUTH_MODE === "bearer_token") {
+    AUTH_MODE_USED = "API"
+
+    const headers = baseHeaders()
+    headers.Authorization = "Bearer " + cred.apiToken
+
+    AUTH_HEADERS_CACHE = headers
+    return headers
+  }
+
+  if (AUTH_MODE === "basic_direct") {
+    AUTH_MODE_USED = "API"
+
+    const headers = baseHeaders()
+    headers.Authorization = "Basic " + base64(cred.clientId + ":" + cred.apiToken)
+
+    AUTH_HEADERS_CACHE = headers
+    return headers
+  }
+
+  if (AUTH_MODE === "auth_endpoint") {
+    const accessToken = await getAccessTokenViaAuthEndpoint(cred.clientId, cred.apiToken)
+
+    AUTH_MODE_USED = "API"
+
+    const headers = baseHeaders()
+    headers.Authorization = "Bearer " + accessToken
+
+    AUTH_HEADERS_CACHE = headers
+    return headers
+  }
+
+  const errors = []
+
+  const strategies = [
+    async function() {
+      const h = baseHeaders()
+      h.Authorization = "Bearer " + cred.apiToken
+      return { label: "API", headers: h }
+    },
+    async function() {
+      const h = baseHeaders()
+      h.Authorization = "Basic " + base64(cred.clientId + ":" + cred.apiToken)
+      return { label: "API", headers: h }
+    },
+    async function() {
+      const t = await getAccessTokenViaAuthEndpoint(cred.clientId, cred.apiToken)
+      const h = baseHeaders()
+      h.Authorization = "Bearer " + t
+      return { label: "API", headers: h }
+    }
+  ]
+
+  for (let i = 0; i < strategies.length; i++) {
+    try {
+      const result = await strategies[i]()
+      await testAuthHeaders(result.headers)
+
+      AUTH_MODE_USED = result.label
+      AUTH_HEADERS_CACHE = result.headers
+
+      return result.headers
+    } catch (e) {
+      errors.push(String(e.message || e))
+    }
+  }
+
+  throw new Error("Nie udało się połączyć z API Shopera. " + errors.join(" | "))
+}
+
+async function fetchOrdersFromApi() {
+  const orders = []
+  const headers = await getWorkingAuthHeaders()
+
+  const today = startOfLocalDay(new Date())
+  const firstDay = addDays(today, -(DAYS_TO_SHOW - 1))
+
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const url = buildOrdersUrl(page)
+    const res = await apiRequestJSON(url, headers, "GET", null)
+
+    if (!res.ok) {
+      throw new Error("Pobieranie zamówień: HTTP " + res.status + ": " + shortBody(res.text))
+    }
+
+    const list = extractOrderArray(res.json)
+
+    if (DEBUG_API && page === 1) {
+      console.log("API mode: " + AUTH_MODE_USED)
+      console.log("URL: " + url)
+      console.log("Orders found on page 1: " + list.length)
+    }
+
+    if (!list || list.length === 0) break
+
+    orders.push.apply(orders, list)
+
+    if (!USE_DATE_FILTER) {
+      const parsedDates = list.map(function(order) {
+        return getOrderDate(order)
+      }).filter(Boolean)
+
+      if (parsedDates.length > 0) {
+        const oldestOnPage = parsedDates.reduce(function(oldest, d) {
+          return d < oldest ? d : oldest
+        }, parsedDates[0])
+
+        if (oldestOnPage < firstDay) break
+      }
+    }
+
+    if (list.length < PAGE_LIMIT) break
+  }
+
+  return orders
+}
+
+function extractOrderArray(json) {
+  if (Array.isArray(json)) return json
+  if (!json || typeof json !== "object") return []
+
+  const candidates = [
+    json.list,
+    json.data,
+    json.orders,
+    json.items,
+    json.result,
+    json.results,
+    json.collection,
+    json.data && json.data.list,
+    json.data && json.data.orders,
+    json.result && json.result.list,
+    json.result && json.result.orders
+  ]
+
+  for (let i = 0; i < candidates.length; i++) {
+    const arr = normalizeOrderCollection(candidates[i])
+    if (arr.length > 0) return arr
+  }
+
+  return normalizeOrderCollection(json)
+}
+
+function normalizeOrderCollection(value) {
+  if (!value) return []
+
+  if (Array.isArray(value)) {
+    return value.filter(function(item) {
+      return item && typeof item === "object"
+    })
+  }
+
+  if (typeof value === "object") {
+    const values = Object.values(value)
+    const orderLike = values.filter(function(item) {
+      return item && typeof item === "object" && looksLikeOrder(item)
+    })
+
+    if (orderLike.length > 0) return orderLike
+  }
+
+  return []
+}
+
+function looksLikeOrder(item) {
+  if (!item || typeof item !== "object") return false
+
+  const date = firstValue(item, [
+    "date",
+    "date_add",
+    "created_at",
+    "createdAt",
+    "createDate",
+    "dateCreated",
+    "order_date",
+    "orderDate",
+    "created",
+    "ordered_at",
+    "insert_date",
+    "time",
+    "confirm_date",
+    "date_confirm",
+    "status_date"
+  ])
+
+  const amount = firstValue(item, [
+    "sum",
+    "sum_noship",
+    "total",
+    "amount",
+    "price",
+    "order_sum",
+    "total_sum",
+    "payment_sum",
+    "paid",
+    "sum_price",
+    "summary",
+    "cost.total",
+    "price.total",
+    "payment.amount"
+  ])
+
+  const id = firstValue(item, ["id", "order_id", "orderId"])
+
+  return date !== null || amount !== null || id !== null
+}
+
+function parseDateValue(value) {
+  if (!value) return null
+
+  if (typeof value === "object") {
+    return parseDateValue(firstValue(value, ["date", "value", "timestamp", "created", "created_at", "createdAt"]))
+  }
+
+  if (typeof value === "number") {
+    const ms = value > 1000000000000 ? value : value * 1000
+    const d = new Date(ms)
+    return isNaN(d.getTime()) ? null : d
+  }
+
+  const text = String(value).trim()
+
+  if (text === "0000-00-00" || text === "0000-00-00 00:00:00") return null
+
+  if (/^\d+$/.test(text)) {
+    const num = Number(text)
+    const ms = num > 1000000000000 ? num : num * 1000
+    const d = new Date(ms)
+    return isNaN(d.getTime()) ? null : d
+  }
+
+  const ymd = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/)
+
+  if (ymd) {
+    const d = new Date(
+      Number(ymd[1]),
+      Number(ymd[2]) - 1,
+      Number(ymd[3]),
+      Number(ymd[4] || 0),
+      Number(ymd[5] || 0),
+      Number(ymd[6] || 0)
+    )
+
+    return isNaN(d.getTime()) ? null : d
+  }
+
+  const dm = text.match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/)
+
+  if (dm) {
+    const d = new Date(
+      Number(dm[3]),
+      Number(dm[2]) - 1,
+      Number(dm[1]),
+      Number(dm[4] || 0),
+      Number(dm[5] || 0),
+      Number(dm[6] || 0)
+    )
+
+    return isNaN(d.getTime()) ? null : d
+  }
+
+  const variants = [
+    text,
+    text.replace(" ", "T"),
+    text.replace(/\./g, "-").replace(" ", "T")
+  ]
+
+  for (let i = 0; i < variants.length; i++) {
+    const d = new Date(variants[i])
+    if (!isNaN(d.getTime())) return d
+  }
+
+  return null
+}
+
+function parseMoney(value) {
+  if (value === null || value === undefined) return 0
+
+  if (typeof value === "object") {
+    return parseMoney(firstValue(value, ["value", "amount", "gross", "brutto", "total", "sum", "price"]))
+  }
+
+  if (typeof value === "number") return value
+
+  const text = String(value)
+    .replace(/\s/g, "")
+    .replace("zł", "")
+    .replace("PLN", "")
+    .replace(",", ".")
+
+  const num = Number(text)
+  return isNaN(num) ? 0 : num
+}
+
+function getOrderDate(order) {
+  return parseDateValue(firstValue(order, [
+    "date",
+    "date_add",
+    "created_at",
+    "createdAt",
+    "createDate",
+    "dateCreated",
+    "order_date",
+    "orderDate",
+    "created",
+    "ordered_at",
+    "insert_date",
+    "time",
+    "status_date",
+    "confirm_date",
+    "date_confirm"
+  ]))
+}
+
+function getOrderAmount(order) {
+  return parseMoney(firstValue(order, [
+    "sum",
+    "sum_noship",
+    "total",
+    "amount",
+    "price",
+    "order_sum",
+    "total_sum",
+    "payment_sum",
+    "paid",
+    "sum_price",
+    "summary",
+    "cost.total",
+    "price.total",
+    "payment.amount"
+  ]))
+}
+
+function getOrderStatusText(order) {
+  const value = firstValue(order, [
+    "status",
+    "status_id",
+    "status_name",
+    "statusName",
+    "state",
+    "order_status",
+    "status.name",
+    "status.title",
+    "status.translation"
+  ])
+
+  if (value === null || value === undefined) return ""
+  if (typeof value === "object") return JSON.stringify(value).toLowerCase()
+
+  return String(value).toLowerCase()
+}
+
+function shouldCountOrder(order) {
+  const status = getOrderStatusText(order)
+  if (!status) return true
+
+  return !EXCLUDED_STATUS_KEYWORDS.some(function(word) {
+    return status.indexOf(word) >= 0
+  })
+}
+
+function formatDayKey(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, "0")
+  const d = String(date.getDate()).padStart(2, "0")
+  return y + "-" + m + "-" + d
+}
+
+function formatTime(date) {
+  return String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0")
+}
+
+function formatShortDate(date) {
+  const months = ["sty", "lut", "mar", "kwi", "maj", "cze", "lip", "sie", "wrz", "paź", "lis", "gru"]
+  return date.getDate() + " " + months[date.getMonth()]
+}
+
+function formatMoney(value) {
+  return String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, " ")
+}
+
+function prepareSalesData(rawOrders) {
+  const today = startOfLocalDay(new Date())
+  const firstDay = addDays(today, -(DAYS_TO_SHOW - 1))
+  const days = []
+
+  for (let i = 0; i < DAYS_TO_SHOW; i++) {
+    const date = addDays(firstDay, i)
+
+    days.push({
+      date: date,
+      key: formatDayKey(date),
+      orders: 0,
+      revenue: 0
+    })
+  }
+
+  const dayMap = {}
+
+  days.forEach(function(d) {
+    dayMap[d.key] = d
+  })
+
+  for (let i = 0; i < rawOrders.length; i++) {
+    const order = rawOrders[i]
+
+    if (!shouldCountOrder(order)) continue
+
+    const date = getOrderDate(order)
+    if (!date) continue
+
+    const day = startOfLocalDay(date)
+
+    if (day < firstDay || day > today) continue
+
+    const key = formatDayKey(day)
+
+    if (!dayMap[key]) continue
+
+    dayMap[key].orders += 1
+    dayMap[key].revenue += getOrderAmount(order)
+  }
+
+  const todayData = dayMap[formatDayKey(today)] || { orders: 0, revenue: 0 }
+  const totalOrders = days.reduce(function(sum, d) { return sum + d.orders }, 0)
+  const totalRevenue = days.reduce(function(sum, d) { return sum + d.revenue }, 0)
+  const avgBasket = totalOrders > 0 ? totalRevenue / totalOrders : 0
+
+  const bestDay = days.reduce(function(best, d) {
+    if (!best || d.revenue > best.revenue) return d
+    return best
+  }, null)
+
+  return {
+    days: days,
+    today: todayData,
+    totalOrders: totalOrders,
+    totalRevenue: totalRevenue,
+    avgBasket: avgBasket,
+    bestDay: bestDay
+  }
+}
+
+function makeDemoOrders() {
+  const orders = []
+  const today = startOfLocalDay(new Date())
+
+  for (let i = 0; i < DAYS_TO_SHOW; i++) {
+    const date = addDays(today, -i)
+    const count = Math.floor(Math.random() * 8) + (i % 5 === 0 ? 4 : 0)
+
+    for (let j = 0; j < count; j++) {
+      orders.push({
+        date: date.toISOString(),
+        total: Math.floor(Math.random() * 950) + 250,
+        status: "paid"
+      })
+    }
+  }
+
+  return orders
+}
+
+function drawText(dc, value, x, y, w, h, size, color, bold) {
+  dc.setTextAlignedLeft()
+  dc.setFont(bold ? Font.boldSystemFont(size) : Font.mediumSystemFont(size))
+  dc.setTextColor(new Color(color))
+  dc.drawTextInRect(String(value), new Rect(x, y, w, h))
+}
+
+function drawTextCenter(dc, value, x, y, w, h, size, color, bold) {
+  dc.setTextAlignedCenter()
+  dc.setFont(bold ? Font.boldSystemFont(size) : Font.mediumSystemFont(size))
+  dc.setTextColor(new Color(color))
+  dc.drawTextInRect(String(value), new Rect(x, y, w, h))
+  dc.setTextAlignedLeft()
+}
+
+function roundedRect(dc, x, y, w, h, r, color) {
+  const path = new Path()
+  const rr = Math.min(r, w / 2, h / 2)
+
+  path.move(new Point(x + rr, y))
+  path.addLine(new Point(x + w - rr, y))
+  path.addQuadCurve(new Point(x + w, y + rr), new Point(x + w, y))
+  path.addLine(new Point(x + w, y + h - rr))
+  path.addQuadCurve(new Point(x + w - rr, y + h), new Point(x + w, y + h))
+  path.addLine(new Point(x + rr, y + h))
+  path.addQuadCurve(new Point(x, y + h - rr), new Point(x, y + h))
+  path.addLine(new Point(x, y + rr))
+  path.addQuadCurve(new Point(x + rr, y), new Point(x, y))
+  path.closeSubpath()
+
+  dc.addPath(path)
+  dc.setFillColor(color)
+  dc.fillPath()
+}
+
+function strokeRoundedRect(dc, x, y, w, h, r, color, lineWidth) {
+  const path = new Path()
+  const rr = Math.min(r, w / 2, h / 2)
+
+  path.move(new Point(x + rr, y))
+  path.addLine(new Point(x + w - rr, y))
+  path.addQuadCurve(new Point(x + w, y + rr), new Point(x + w, y))
+  path.addLine(new Point(x + w, y + h - rr))
+  path.addQuadCurve(new Point(x + w - rr, y + h), new Point(x + w, y + h))
+  path.addLine(new Point(x + rr, y + h))
+  path.addQuadCurve(new Point(x, y + h - rr), new Point(x, y + h))
+  path.addLine(new Point(x, y + rr))
+  path.addQuadCurve(new Point(x + rr, y), new Point(x, y))
+  path.closeSubpath()
+
+  dc.addPath(path)
+  dc.setStrokeColor(color)
+  dc.setLineWidth(lineWidth || 2)
+  dc.strokePath()
+}
+
+function panel(dc, x, y, w, h, r, alpha) {
+  const panelAlpha = alpha === undefined || alpha === null ? COLORS.panelAlpha : alpha
+
+  roundedRect(dc, x, y, w, h, r || 34, new Color(COLORS.panel, panelAlpha))
+  strokeRoundedRect(dc, x, y, w, h, r || 34, new Color(COLORS.panelBorder, COLORS.cardBorderAlpha), 2)
+}
+
+function drawBackground(dc) {
+  roundedRect(dc, 0, 0, CFG.width, CFG.height, CFG.cornerRadius, new Color(COLORS.bg, COLORS.baseAlpha))
+  roundedRect(dc, 0, 0, CFG.width, CFG.height, CFG.cornerRadius, new Color(COLORS.bgDeep, COLORS.deepAlpha))
+
+  dc.setFillColor(new Color(COLORS.bgGlowBlue, THEME === "day" ? 0.22 : 0.16))
+  dc.fillEllipse(new Rect(80, 35, 460, 460))
+
+  dc.setFillColor(new Color(COLORS.bgGlowGreen, THEME === "day" ? 0.20 : 0.13))
+  dc.fillEllipse(new Rect(760, 130, 420, 420))
+
+  roundedRect(
+    dc,
+    10,
+    10,
+    CFG.width - 20,
+    172,
+    Math.max(18, CFG.cornerRadius - 18),
+    new Color("#ffffff", COLORS.topGlassAlpha)
+  )
+
+  strokeRoundedRect(
+    dc,
+    3,
+    3,
+    CFG.width - 6,
+    CFG.height - 6,
+    CFG.cornerRadius,
+    new Color(COLORS.panelBorder, COLORS.borderAlpha),
+    3
+  )
+}
+
+function drawBagIcon(dc, x, y, size, color) {
+  roundedRect(dc, x, y, size, size, 24, new Color(color, 0.11))
+  strokeRoundedRect(dc, x, y, size, size, 24, new Color(color, 0.35), 2)
+
+  const bagX = x + size * 0.30
+  const bagY = y + size * 0.42
+  const bagW = size * 0.42
+  const bagH = size * 0.32
+
+  strokeRoundedRect(dc, bagX, bagY, bagW, bagH, 5, new Color(color, 0.92), 5)
+
+  const handle = new Path()
+  handle.move(new Point(bagX + bagW * 0.20, bagY))
+  handle.addLine(new Point(bagX + bagW * 0.20, bagY - size * 0.12))
+  handle.addQuadCurve(new Point(bagX + bagW * 0.80, bagY - size * 0.12), new Point(bagX + bagW * 0.50, bagY - size * 0.22))
+  handle.addLine(new Point(bagX + bagW * 0.80, bagY))
+
+  dc.addPath(handle)
+  dc.setStrokeColor(new Color(color, 0.92))
+  dc.setLineWidth(5)
+  dc.strokePath()
+}
+
+function drawCartIcon(dc, x, y, size, color) {
+  roundedRect(dc, x, y, size, size, 22, new Color(color, 0.10))
+  strokeRoundedRect(dc, x, y, size, size, 22, new Color(color, 0.22), 2)
+
+  const path = new Path()
+  path.move(new Point(x + size * 0.23, y + size * 0.36))
+  path.addLine(new Point(x + size * 0.34, y + size * 0.36))
+  path.addLine(new Point(x + size * 0.42, y + size * 0.63))
+  path.addLine(new Point(x + size * 0.72, y + size * 0.63))
+  path.addLine(new Point(x + size * 0.78, y + size * 0.44))
+  path.addLine(new Point(x + size * 0.38, y + size * 0.44))
+
+  dc.addPath(path)
+  dc.setStrokeColor(new Color(color, 0.94))
+  dc.setLineWidth(5)
+  dc.strokePath()
+
+  dc.setFillColor(new Color(color, 0.94))
+  dc.fillEllipse(new Rect(x + size * 0.43, y + size * 0.70, 9, 9))
+  dc.fillEllipse(new Rect(x + size * 0.68, y + size * 0.70, 9, 9))
+}
+
+function drawWalletIcon(dc, x, y, size, color) {
+  roundedRect(dc, x, y, size, size, 22, new Color(color, 0.10))
+  strokeRoundedRect(dc, x, y, size, size, 22, new Color(color, 0.22), 2)
+
+  strokeRoundedRect(dc, x + size * 0.27, y + size * 0.38, size * 0.50, size * 0.33, 6, new Color(color, 0.94), 5)
+
+  dc.setFillColor(new Color(color, 0.94))
+  dc.fillEllipse(new Rect(x + size * 0.65, y + size * 0.51, 8, 8))
+}
+
+function drawBasketIcon(dc, x, y, size, color) {
+  roundedRect(dc, x, y, size, size, 22, new Color(color, 0.10))
+  strokeRoundedRect(dc, x, y, size, size, 22, new Color(color, 0.22), 2)
+
+  const path = new Path()
+  path.move(new Point(x + size * 0.28, y + size * 0.48))
+  path.addLine(new Point(x + size * 0.72, y + size * 0.48))
+  path.addLine(new Point(x + size * 0.65, y + size * 0.70))
+  path.addLine(new Point(x + size * 0.35, y + size * 0.70))
+  path.closeSubpath()
+
+  dc.addPath(path)
+  dc.setStrokeColor(new Color(color, 0.94))
+  dc.setLineWidth(5)
+  dc.strokePath()
+
+  const handle = new Path()
+  handle.move(new Point(x + size * 0.38, y + size * 0.48))
+  handle.addLine(new Point(x + size * 0.50, y + size * 0.33))
+  handle.addLine(new Point(x + size * 0.62, y + size * 0.48))
+
+  dc.addPath(handle)
+  dc.setStrokeColor(new Color(color, 0.94))
+  dc.setLineWidth(5)
+  dc.strokePath()
+}
+
+function drawTrophyIcon(dc, x, y, size, color) {
+  roundedRect(dc, x, y, size, size, 22, new Color(color, 0.10))
+  strokeRoundedRect(dc, x, y, size, size, 22, new Color(color, 0.22), 2)
+
+  const cup = new Path()
+  cup.move(new Point(x + size * 0.34, y + size * 0.33))
+  cup.addLine(new Point(x + size * 0.66, y + size * 0.33))
+  cup.addLine(new Point(x + size * 0.60, y + size * 0.58))
+  cup.addLine(new Point(x + size * 0.40, y + size * 0.58))
+  cup.closeSubpath()
+
+  dc.addPath(cup)
+  dc.setStrokeColor(new Color(color, 0.94))
+  dc.setLineWidth(5)
+  dc.strokePath()
+
+  dc.setStrokeColor(new Color(color, 0.94))
+  dc.setLineWidth(5)
+
+  const left = new Path()
+  left.move(new Point(x + size * 0.34, y + size * 0.39))
+  left.addLine(new Point(x + size * 0.22, y + size * 0.39))
+  left.addLine(new Point(x + size * 0.26, y + size * 0.52))
+  left.addLine(new Point(x + size * 0.39, y + size * 0.52))
+  dc.addPath(left)
+  dc.strokePath()
+
+  const right = new Path()
+  right.move(new Point(x + size * 0.66, y + size * 0.39))
+  right.addLine(new Point(x + size * 0.78, y + size * 0.39))
+  right.addLine(new Point(x + size * 0.74, y + size * 0.52))
+  right.addLine(new Point(x + size * 0.61, y + size * 0.52))
+  dc.addPath(right)
+  dc.strokePath()
+
+  dc.fillRect(new Rect(x + size * 0.47, y + size * 0.58, size * 0.06, size * 0.15))
+  dc.fillRect(new Rect(x + size * 0.36, y + size * 0.74, size * 0.28, size * 0.05))
+}
+
+function drawCalendarIcon(dc, x, y, size, color) {
+  roundedRect(dc, x, y, size, size, 22, new Color(color, 0.10))
+  strokeRoundedRect(dc, x, y, size, size, 22, new Color(color, 0.22), 2)
+
+  strokeRoundedRect(dc, x + size * 0.28, y + size * 0.34, size * 0.46, size * 0.42, 6, new Color(color, 0.94), 5)
+
+  dc.setFillColor(new Color(color, 0.94))
+  dc.fillRect(new Rect(x + size * 0.34, y + size * 0.27, size * 0.06, size * 0.16))
+  dc.fillRect(new Rect(x + size * 0.62, y + size * 0.27, size * 0.06, size * 0.16))
+  dc.fillRect(new Rect(x + size * 0.30, y + size * 0.45, size * 0.42, 5))
+}
+
+function drawRefreshDot(dc, x, y, color) {
+  dc.setFillColor(new Color(color, 0.20))
+  dc.fillEllipse(new Rect(x - 7, y - 7, 26, 26))
+
+  dc.setFillColor(new Color(color))
+  dc.fillEllipse(new Rect(x, y, 12, 12))
+}
+
+function estimateTextWidth(text, fontSize) {
+  let width = 0
+  const s = String(text)
+
+  for (let i = 0; i < s.length; i++) {
+    const char = s[i]
+
+    if (char === " ") width += fontSize * 0.38
+    else if (char >= "0" && char <= "9") width += fontSize * 0.64
+    else if (char === "." || char === "," || char === "'") width += fontSize * 0.24
+    else width += fontSize * 0.55
+  }
+
+  return width
+}
+
+function drawMoneyCentered(dc, value, centerX, y, maxW, mainSize, suffixSize, mainColor, suffixColor) {
+  const text = String(value)
+  const suffix = "zł"
+
+  let valueFont = mainSize
+  let suffixFont = suffixSize
+  let textWidth = estimateTextWidth(text, valueFont)
+  let suffixWidth = estimateTextWidth(suffix, suffixFont)
+
+  const gap = 16
+
+  while (textWidth + gap + suffixWidth > maxW && valueFont > 34) {
+    valueFont -= 2
+    suffixFont = Math.max(18, suffixFont - 1)
+    textWidth = estimateTextWidth(text, valueFont)
+    suffixWidth = estimateTextWidth(suffix, suffixFont)
+  }
+
+  const totalW = textWidth + gap + suffixWidth
+  const startX = centerX - totalW / 2
+
+  drawText(dc, text, startX, y, textWidth + 20, valueFont + 20, valueFont, mainColor, true)
+  drawText(dc, suffix, startX + textWidth + gap, y + Math.round(valueFont * 0.27), suffixWidth + 30, suffixFont + 12, suffixFont, suffixColor, true)
+}
+
+function drawBigCard(dc, x, y, w, h, iconType, title, value, subtitle, valueMode) {
+  panel(dc, x, y, w, h, 36, COLORS.panelAlpha)
+
+  const iconSize = 92
+  const iconX = x + (w - iconSize) / 2
+  const iconY = y + 44
+
+  if (iconType === "cart") drawCartIcon(dc, iconX, iconY, iconSize, COLORS.green)
+  if (iconType === "wallet") drawWalletIcon(dc, iconX, iconY, iconSize, COLORS.green)
+  if (iconType === "basket") drawBasketIcon(dc, iconX, iconY, iconSize, COLORS.green)
+  if (iconType === "trophy") drawTrophyIcon(dc, iconX, iconY, iconSize, COLORS.green)
+  if (iconType === "calendar") drawCalendarIcon(dc, iconX, iconY, iconSize, COLORS.green)
+
+  drawTextCenter(dc, title, x + 24, y + 154, w - 48, 36, 24, COLORS.text, true)
+
+  if (valueMode === "money") {
+    drawMoneyCentered(dc, value, x + w / 2, y + 202, w - 42, 76, 28, COLORS.green, COLORS.green)
+  } else if (valueMode === "bigMoney") {
+    drawMoneyCentered(dc, value, x + w / 2, y + 210, w - 42, 64, 24, COLORS.green, COLORS.green)
+  } else {
+    drawTextCenter(dc, value, x + 20, y + 204, w - 40, 92, 82, COLORS.text, true)
+  }
+
+  drawTextCenter(dc, subtitle, x + 24, y + 306, w - 48, 38, 27, COLORS.green, true)
+}
+
+async function drawLarge(data) {
+  const dc = new DrawContext()
+  dc.size = new Size(CFG.width, CFG.height)
+  dc.opaque = false
+  dc.respectScreenScale = false
+
+  drawBackground(dc)
+
+  const now = new Date()
+  const shopName = getShopNameFromUrl()
+  const best = data.bestDay || data.days[data.days.length - 1]
+
+  drawBagIcon(dc, 54, 54, 112, COLORS.green)
+
+  drawText(dc, "Sprzedaż sklepu", 198, 68, 500, 58, 45, COLORS.text, true)
+  drawText(dc, shopName, 198, 126, 360, 40, 29, COLORS.green, true)
+
+  drawText(dc, "aktualizacja", 780, 80, 160, 34, 23, COLORS.subtext, false)
+  drawText(dc, formatTime(now), 940, 80, 80, 34, 25, COLORS.text, true)
+  drawRefreshDot(dc, 1030, 90, COLORS.green)
+
+  const marginX = 54
+  const gap = 24
+  const cardW = Math.floor((CFG.width - marginX * 2 - gap * 2) / 3)
+  const cardH = 360
+
+  const row1Y = 250
+  const row2Y = 634
+
+  drawBigCard(
+    dc,
+    marginX,
+    row1Y,
+    cardW,
+    cardH,
+    "cart",
+    "ZAMÓWIENIA DZIŚ",
+    String(data.today.orders),
+    "zamówień",
+    "number"
+  )
+
+  drawBigCard(
+    dc,
+    marginX + cardW + gap,
+    row1Y,
+    cardW,
+    cardH,
+    "wallet",
+    "PRZYCHÓD DZIŚ",
+    formatMoney(data.today.revenue),
+    "przychód",
+    "money"
+  )
+
+  drawBigCard(
+    dc,
+    marginX + (cardW + gap) * 2,
+    row1Y,
+    cardW,
+    cardH,
+    "basket",
+    "ŚR. KOSZYK",
+    formatMoney(data.avgBasket),
+    "średnia",
+    "money"
+  )
+
+  drawBigCard(
+    dc,
+    marginX,
+    row2Y,
+    cardW,
+    cardH,
+    "trophy",
+    "NAJLEPSZY DZIEŃ",
+    formatShortDate(best.date),
+    formatMoney(best.revenue) + " zł",
+    "number"
+  )
+
+  drawBigCard(
+    dc,
+    marginX + cardW + gap,
+    row2Y,
+    cardW,
+    cardH,
+    "calendar",
+    "30 DNI",
+    String(data.totalOrders),
+    "zamówienia",
+    "number"
+  )
+
+  drawBigCard(
+    dc,
+    marginX + (cardW + gap) * 2,
+    row2Y,
+    cardW,
+    cardH,
+    "wallet",
+    "SUMA 30 DNI",
+    formatMoney(data.totalRevenue),
+    "przychód",
+    "bigMoney"
+  )
+
+  return dc.getImage()
+}
+
+async function buildWidget() {
+  const rawOrders = USE_DEMO_DATA ? makeDemoOrders() : await fetchOrdersFromApi()
+  const salesData = prepareSalesData(rawOrders)
+  const image = await drawLarge(salesData)
+
+  const widget = new ListWidget()
+  widget.backgroundColor = new Color("#000000", 0)
+  widget.setPadding(0, 0, 0, 0)
+
+  const img = widget.addImage(image)
+  img.centerAlignImage()
+  img.applyFillingContentMode()
+
+  widget.refreshAfterDate = new Date(Date.now() + REFRESH_MINUTES * 60 * 1000)
+
+  return widget
+}
+
+let widget
+
+try {
+  widget = await buildWidget()
+} catch (e) {
+  widget = new ListWidget()
+  widget.backgroundColor = new Color(THEME === "day" ? "#f6f9fd" : "#07111c")
+  widget.setPadding(16, 16, 16, 16)
+
+  const title = widget.addText("Błąd widgetu sprzedaży")
+  title.textColor = new Color(THEME === "day" ? "#102033" : "#ffffff")
+  title.font = Font.boldSystemFont(14)
+
+  widget.addSpacer(6)
+
+  const msg = widget.addText(String(e.message || e))
+  msg.textColor = new Color(THEME === "day" ? "#5f6b7a" : "#aeb8c5")
+  msg.font = Font.systemFont(10)
+  msg.lineLimit = 10
+}
+
+if (config.runsInWidget) {
+  Script.setWidget(widget)
+} else {
+  await widget.presentLarge()
+}
+
+Script.complete()
