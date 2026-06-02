@@ -5,7 +5,9 @@ Ta instrukcja pokazuje, jak zainstalować widgety Shoper z repozytorium `scripta
 Dotyczy widgetów z kategorii **Sprzedaż**:
 
 - [`shoper_1.js`](../widgety/shoper_1.js),
-- [`shoper_big.js`](../widgety/shoper_big.js).
+- [`shoper_big.js`](../widgety/shoper_big.js),
+- [`shoper_licznik_small.js`](../widgety/shoper_licznik_small.js),
+- [`shoper_bestsellery.js`](../widgety/shoper_bestsellery.js).
 
 ---
 
@@ -17,6 +19,12 @@ Dotyczy widgetów z kategorii **Sprzedaż**:
 - [4. Zapisanie Client ID i Token API w Keychain Scriptable](#4-zapisanie-client-id-i-token-api-w-keychain-scriptable)
 - [5. Przygotowanie głównego skryptu widgetu](#5-przygotowanie-głównego-skryptu-widgetu)
 - [6. Konfiguracja widgetu](#6-konfiguracja-widgetu)
+  - [Konfiguracja `shoper_1.js`](#konfiguracja-shoper_1js)
+  - [Konfiguracja `shoper_big.js`](#konfiguracja-shoper_bigjs)
+  - [Konfiguracja `shoper_licznik_small.js`](#konfiguracja-shoper_licznik_smalljs)
+  - [Konfiguracja `shoper_bestsellery.js`](#konfiguracja-shoper_bestselleryjs)
+  - [Adres sklepu](#adres-sklepu)
+  - [Odświeżanie danych](#odświeżanie-danych)
 - [7. Tryb danych demo](#7-tryb-danych-demo)
 - [8. Test działania w Scriptable](#8-test-działania-w-scriptable)
 - [9. Dodanie widgetu na ekran iPhone’a](#9-dodanie-widgetu-na-ekran-iphonea)
@@ -36,7 +44,9 @@ Do działania potrzebujesz:
   - **Token API**,
 - jednego z gotowych skryptów JS z repozytorium:
   - `widgety/shoper_1.js`,
-  - `widgety/shoper_big.js`.
+  - `widgety/shoper_big.js`,
+  - `widgety/shoper_licznik_small.js`,
+  - `widgety/shoper_bestsellery.js`.
 
 ---
 
@@ -59,16 +69,61 @@ Dane API najlepiej przechowywać w Keychain aplikacji Scriptable. Dzięki temu t
 
 ## 3. Wymagane uprawnienia API
 
-Wymagane uprawnienia zależą od kategorii widgetów, których chcesz używać.
+Wymagane uprawnienia zależą od konkretnego widgetu.
 
-Na ten moment repozytorium zawiera widgety z kategorii **Sprzedaż**, dlatego do ich działania potrzebny jest wyłącznie dostęp do odczytu zamówień.
+<table>
+  <thead>
+    <tr>
+      <th>Widget</th>
+      <th>Kategoria widgetu</th>
+      <th>Obszar API Shopera</th>
+      <th>Wymagane uprawnienie</th>
+      <th>Do czego służy</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>shoper_1.js</code></td>
+      <td>Sprzedaż</td>
+      <td>Zamówienia / Orders</td>
+      <td>Odczyt</td>
+      <td>Pobieranie danych sprzedażowych i zamówień z ostatnich 30 dni.</td>
+    </tr>
+    <tr>
+      <td><code>shoper_big.js</code></td>
+      <td>Sprzedaż</td>
+      <td>Zamówienia / Orders</td>
+      <td>Odczyt</td>
+      <td>Pobieranie danych sprzedażowych i zamówień z ostatnich 30 dni.</td>
+    </tr>
+    <tr>
+      <td><code>shoper_licznik_small.js</code></td>
+      <td>Sprzedaż</td>
+      <td>Zamówienia / Orders</td>
+      <td>Odczyt</td>
+      <td>Pobieranie liczby zamówień z wybranego zakresu czasu.</td>
+    </tr>
+    <tr>
+      <td rowspan="3"><code>shoper_bestsellery.js</code></td>
+      <td rowspan="3">Sprzedaż</td>
+      <td>Zamówienia / Orders</td>
+      <td>Odczyt</td>
+      <td>Pobieranie zamówień z ostatnich 30 dni.</td>
+    </tr>
+    <tr>
+      <td>Produkty w zamówieniach / Order products</td>
+      <td>Odczyt</td>
+      <td>Sprawdzanie, które produkty zostały sprzedane i w jakiej ilości.</td>
+    </tr>
+    <tr>
+      <td>Produkty / Products</td>
+      <td>Odczyt</td>
+      <td>Pobieranie SKU produktu oraz sprawdzanie, czy produkt jest aktywny.</td>
+    </tr>
+  </tbody>
+</table>
 
-| Kategoria widgetu | Obszar API Shopera | Wymagane uprawnienie | Dotyczy plików |
-|---|---|---|---|
-| Sprzedaż | Zamówienia | Odczyt | `shoper_1.js`, `shoper_big.js` |
-
-Nie nadawaj aplikacji większych uprawnień, niż są potrzebne do działania wybranego widgetu. Dla widgetów sprzedażowych wystarczy sam odczyt zamówień.
-
+Nie nadawaj aplikacji większych uprawnień, niż są potrzebne do działania wybranego widgetu.
 
 ---
 
@@ -118,7 +173,18 @@ Shoper Widget
 Wklej do niego cały kod wybranego widgetu:
 
 - `shoper_1.js` — jeżeli chcesz mieć możliwość wyboru `medium` albo `large`,
-- `shoper_big.js` — jeżeli chcesz używać tylko dużego widgetu.
+- `shoper_big.js` — jeżeli chcesz używać tylko dużego widgetu,
+- `shoper_licznik_small.js` — jeżeli chcesz używać małego licznika zamówień,
+- `shoper_bestsellery.js` — jeżeli chcesz wyświetlać najlepiej sprzedające się produkty.
+
+Możesz utworzyć osobny skrypt w Scriptable dla każdego widgetu, np.:
+
+```text
+Shoper Sprzedaż
+Shoper Big
+Shoper Licznik Small
+Shoper Bestsellery
+```
 
 ---
 
@@ -149,6 +215,8 @@ Jeżeli chcesz jasny motyw pod iOS, zmień:
 const THEME = "day"
 ```
 
+---
+
 ### Konfiguracja `shoper_big.js`
 
 `shoper_big.js` jest przygotowany wyłącznie pod duży widget.
@@ -160,7 +228,72 @@ const THEME = "night" // "night" albo "day"
 const USE_DEMO_DATA = false // true = dane testowe, false = dane z API Shopera
 ```
 
-Adres sklepu ustaw w obu wersjach tak samo:
+---
+
+### Konfiguracja `shoper_licznik_small.js`
+
+`shoper_licznik_small.js` jest przygotowany wyłącznie pod mały widget.
+
+Widget pokazuje liczbę zamówień z wybranego zakresu czasu.
+
+Zakres ustawisz zmienną:
+
+```javascript
+const ORDERS_RANGE = "today"
+```
+
+Dostępne wartości:
+
+| Wartość `ORDERS_RANGE` | Zakres danych |
+|---|---|
+| `"today"` | zamówienia z dzisiaj |
+| `"7d"` | zamówienia z ostatnich 7 dni |
+| `"14d"` | zamówienia z ostatnich 14 dni |
+| `"30d"` | zamówienia z ostatnich 30 dni |
+
+Możesz zmieniać motyw oraz tryb danych demo:
+
+```javascript
+const THEME = "night" // "night" albo "day"
+const USE_DEMO_DATA = false // true = dane testowe, false = dane z API Shopera
+```
+
+---
+
+### Konfiguracja `shoper_bestsellery.js`
+
+`shoper_bestsellery.js` pokazuje najlepiej sprzedające się produkty z ostatnich 30 dni.
+
+Ranking tworzony jest według liczby sprzedanych sztuk. Przy każdym produkcie wyświetlane są:
+
+- pozycja w rankingu,
+- SKU produktu,
+- liczba sprzedanych sztuk,
+- wartość sprzedaży.
+
+Widget obsługuje rozmiary:
+
+```javascript
+const WIDGET_SIZE = "medium" // "medium" albo "large"
+```
+
+Widget obsługuje motyw jasny i ciemny:
+
+```javascript
+const THEME = "night" // "night" albo "day"
+```
+
+Tryb danych demo ustawisz tak samo jak w pozostałych widgetach:
+
+```javascript
+const USE_DEMO_DATA = false // true = dane testowe, false = dane z API Shopera
+```
+
+---
+
+### Adres sklepu
+
+Adres sklepu ustaw w każdym wybranym widgetcie tak samo:
 
 ```javascript
 const SHOP_BASE_URL = "https://domena_twojego_sklepu.pl"
@@ -171,6 +304,8 @@ Przykład:
 ```javascript
 const SHOP_BASE_URL = "https://twojsklep.pl"
 ```
+
+---
 
 ### Odświeżanie danych
 
@@ -188,11 +323,20 @@ const REFRESH_MINUTES = 60
 
 Powyższe ustawienie oznacza próbę odświeżenia danych co około 60 minut. iOS może zarządzać odświeżaniem widgetów po swojemu, więc dokładny czas aktualizacji może zależeć od systemu.
 
+Domyślny czas odświeżania dla dostępnych widgetów to:
+
+| Widget | Domyślne odświeżanie |
+|---|---|
+| `shoper_1.js` | `120` minut |
+| `shoper_big.js` | `120` minut |
+| `shoper_licznik_small.js` | `120` minut |
+| `shoper_bestsellery.js` | `120` minut |
+
 ---
 
 ## 7. Tryb danych demo
 
-W obu wersjach widgetu można użyć trybu demonstracyjnego:
+W dostępnych widgetach można użyć trybu demonstracyjnego:
 
 ```javascript
 const USE_DEMO_DATA = true
@@ -212,14 +356,14 @@ Po ustawieniu:
 const USE_DEMO_DATA = true
 ```
 
-widget pokaże przykładowe dane sprzedażowe zamiast prawdziwych danych z API.
+widget pokaże przykładowe dane zamiast prawdziwych danych z API.
 
 To przydatne, gdy chcesz:
 
 - sprawdzić wygląd widgetu przed podłączeniem API,
 - zrobić zrzut ekranu do README,
 - przetestować wersję `day` albo `night`,
-- sprawdzić układ `medium` albo `large`,
+- sprawdzić układ `small`, `medium` albo `large`,
 - pokazać widget komuś bez udostępniania danych sprzedażowych.
 
 W normalnym użyciu zostaw:
@@ -240,10 +384,21 @@ Jeżeli pojawi się błąd, sprawdź:
 
 - czy `SHOP_BASE_URL` jest poprawny,
 - czy Client ID i Token API są zapisane w Keychain,
-- czy token API ma dostęp do zamówień,
+- czy token API ma wymagane uprawnienia dla danego widgetu,
 - czy sklep ma aktywne API,
-- czy endpoint `/webapi/rest/orders` działa,
 - czy `USE_DEMO_DATA` nie jest przypadkiem ustawione na `true`, jeśli oczekujesz prawdziwych danych.
+
+Dla widgetów sprzedażowych opartych o zamówienia sprawdź też:
+
+- czy endpoint `/webapi/rest/orders` działa,
+- czy w wybranym zakresie czasu istnieją zamówienia.
+
+Dla widgetu `shoper_bestsellery.js` sprawdź dodatkowo:
+
+- czy token API ma dostęp do produktów w zamówieniach,
+- czy token API ma dostęp do produktów,
+- czy produkty mają uzupełnione SKU,
+- czy w ostatnich 30 dniach istnieją zamówienia z produktami.
 
 ---
 
@@ -252,9 +407,10 @@ Jeżeli pojawi się błąd, sprawdź:
 1. Przytrzymaj palec na ekranie głównym iPhone’a.
 2. Kliknij `+` w lewym górnym rogu.
 3. Wyszukaj **Scriptable**.
-4. Wybierz rozmiar widgetu:
-   - **Medium** — dla `shoper_1.js` z ustawieniem `WIDGET_SIZE = "medium"`,
-   - **Large** — dla `shoper_1.js` z ustawieniem `WIDGET_SIZE = "large"` albo dla `shoper_big.js`.
+4. Wybierz rozmiar widgetu zgodny z wybranym skryptem:
+   - **Small** — dla `shoper_licznik_small.js`,
+   - **Medium** — dla `shoper_1.js` z ustawieniem `WIDGET_SIZE = "medium"` albo dla `shoper_bestsellery.js` z ustawieniem `WIDGET_SIZE = "medium"`,
+   - **Large** — dla `shoper_1.js` z ustawieniem `WIDGET_SIZE = "large"`, dla `shoper_big.js` albo dla `shoper_bestsellery.js` z ustawieniem `WIDGET_SIZE = "large"`.
 5. Dodaj widget do ekranu.
 6. Przytrzymaj widget i wybierz **Edit Widget**.
 7. W polu **Script** wybierz swój skrypt, np. `Shoper Widget`.
@@ -279,15 +435,36 @@ const USE_DEMO_DATA = false
 
 ---
 
-### Widget pokazuje `0 zł`
+### Widget pokazuje `0 zł`, `0 zamówień` albo pusty ranking
 
 Możliwe przyczyny:
 
-- sklep nie miał sprzedaży w ostatnich 30 dniach,
+- sklep nie miał sprzedaży w wybranym zakresie czasu,
 - API zwraca inne pola kwoty lub daty,
-- token nie ma dostępu do zamówień,
+- token nie ma wymaganych uprawnień,
 - filtr daty w API nie działa poprawnie,
 - `USE_DEMO_DATA` jest ustawione na `false`, ale API nie zwraca danych.
+
+Wtedy w kodzie ustaw tymczasowo:
+
+```javascript
+const DEBUG_API = true
+```
+
+Uruchom skrypt w Scriptable i sprawdź logi.
+
+---
+
+### `shoper_bestsellery.js` nie pokazuje produktów
+
+Możliwe przyczyny:
+
+- w ostatnich 30 dniach nie było zamówień z produktami,
+- token API nie ma dostępu do produktów w zamówieniach,
+- token API nie ma dostępu do produktów,
+- produkty nie mają uzupełnionego SKU,
+- produkty są nieaktywne,
+- API zwraca dane produktów w innym polu niż oczekiwane.
 
 Wtedy w kodzie ustaw tymczasowo:
 
@@ -305,7 +482,7 @@ Najczęściej oznacza:
 
 - błędny Client ID,
 - błędny Token API,
-- brak uprawnień do zamówień,
+- brak wymaganych uprawnień API,
 - token został usunięty lub wygasł.
 
 ---
@@ -316,7 +493,7 @@ Najczęściej oznacza:
 
 - zły adres sklepu w `SHOP_BASE_URL`,
 - API nie działa pod podanym adresem,
-- endpoint `/webapi/rest/orders` jest niedostępny,
+- endpoint API jest niedostępny,
 - Shoper odrzucił parametry filtrowania.
 
 ---
