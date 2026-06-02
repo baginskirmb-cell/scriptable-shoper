@@ -69,15 +69,6 @@ Na ten moment repozytorium zawiera widgety z kategorii **Sprzedaż**, dlatego do
 
 Nie nadawaj aplikacji większych uprawnień, niż są potrzebne do działania wybranego widgetu. Dla widgetów sprzedażowych wystarczy sam odczyt zamówień.
 
-W przyszłości, jeśli repozytorium zostanie rozbudowane o kolejne kategorie, ta sekcja może zostać rozszerzona o dodatkowe obszary API.
-
-Przykładowo:
-
-| Planowana kategoria | Przykładowy obszar API Shopera | Przykładowe uprawnienie |
-|---|---|---|
-| Produkty | Produkty | Odczyt |
-| Magazyn | Stany magazynowe | Odczyt |
-| Klienci | Klienci | Odczyt |
 
 ---
 
