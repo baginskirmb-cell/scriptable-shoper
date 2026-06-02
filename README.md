@@ -1,6 +1,7 @@
-![Scriptable](https://img.shields.io/badge/Scriptable-iOS-blue)
-![Shoper](https://img.shields.io/badge/Shoper-API-green)
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+[![Scriptable](https://img.shields.io/badge/Scriptable-iOS-blue)](https://scriptable.app/)
+[![Shoper](https://img.shields.io/badge/Shoper-API-green)](https://developers.shoper.pl/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Instrukcja](https://img.shields.io/badge/Instrukcja-instalacji-orange)](docs/INSTALACJA_SCRIPTABLE.md)
 
 # scriptable-shoper
 
