@@ -5,7 +5,7 @@
 
 # scriptable-shoper
 
-![Podgląd projektu](assets/cover.png)
+![Podgląd projektu](assets/first.png)
 
 ## Widgety Shoper dla Scriptable
 
