@@ -18,6 +18,7 @@ const REFRESH_MINUTES = 120
 ```
 
 Odświeżenie można też wymusić ręcznie z poziomu aplikacji Scriptable.
+`Ustawienia widgetu -> edit widget -> when interacting: run script`
 
 ---
 
