@@ -176,14 +176,58 @@ const REFRESH_MINUTES = 120
 
 Wymagane uprawnienia zależą od konkretnego widgetu.
 
-| Widget | Kategoria widgetu | Obszar API Shopera | Wymagane uprawnienie | Do czego służy |
-|---|---|---|---|---|
-| `shoper_1.js` | Sprzedaż | Zamówienia / Orders | Odczyt | Pobieranie danych sprzedażowych i zamówień z ostatnich 30 dni. |
-| `shoper_big.js` | Sprzedaż | Zamówienia / Orders | Odczyt | Pobieranie danych sprzedażowych i zamówień z ostatnich 30 dni. |
-| `shoper_licznik_small.js` | Sprzedaż | Zamówienia / Orders | Odczyt | Pobieranie liczby zamówień z wybranego zakresu czasu. |
-| `shoper_bestsellery.js` | Sprzedaż | Zamówienia / Orders | Odczyt | Pobieranie zamówień z ostatnich 30 dni. |
-| `shoper_bestsellery.js` | Sprzedaż | Produkty w zamówieniach / Order products | Odczyt | Sprawdzanie, które produkty zostały sprzedane i w jakiej ilości. |
-| `shoper_bestsellery.js` | Sprzedaż | Produkty / Products | Odczyt | Pobieranie SKU produktu oraz sprawdzanie, czy produkt jest aktywny. |
+<table>
+  <thead>
+    <tr>
+      <th>Widget</th>
+      <th>Kategoria widgetu</th>
+      <th>Obszar API Shopera</th>
+      <th>Wymagane uprawnienie</th>
+      <th>Do czego służy</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>shoper_1.js</code></td>
+      <td>Sprzedaż</td>
+      <td>Zamówienia / Orders</td>
+      <td>Odczyt</td>
+      <td>Pobieranie danych sprzedażowych i zamówień z ostatnich 30 dni.</td>
+    </tr>
+    <tr>
+      <td><code>shoper_big.js</code></td>
+      <td>Sprzedaż</td>
+      <td>Zamówienia / Orders</td>
+      <td>Odczyt</td>
+      <td>Pobieranie danych sprzedażowych i zamówień z ostatnich 30 dni.</td>
+    </tr>
+    <tr>
+      <td><code>shoper_licznik_small.js</code></td>
+      <td>Sprzedaż</td>
+      <td>Zamówienia / Orders</td>
+      <td>Odczyt</td>
+      <td>Pobieranie liczby zamówień z wybranego zakresu czasu.</td>
+    </tr>
+    <tr>
+      <td rowspan="3"><code>shoper_bestsellery.js</code></td>
+      <td rowspan="3">Sprzedaż</td>
+      <td>Zamówienia / Orders</td>
+      <td>Odczyt</td>
+      <td>Pobieranie zamówień z ostatnich 30 dni.</td>
+    </tr>
+    <tr>
+      <td>Produkty w zamówieniach / Order products</td>
+      <td>Odczyt</td>
+      <td>Sprawdzanie, które produkty zostały sprzedane i w jakiej ilości.</td>
+    </tr>
+    <tr>
+      <td>Produkty / Products</td>
+      <td>Odczyt</td>
+      <td>Pobieranie SKU produktu oraz sprawdzanie, czy produkt jest aktywny.</td>
+    </tr>
+  </tbody>
+</table>
+
 
 Nie nadawaj aplikacji większych uprawnień, niż są potrzebne do działania wybranego widgetu.
 
