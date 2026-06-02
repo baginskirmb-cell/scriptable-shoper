@@ -27,6 +27,8 @@ Odświeżenie można też wymusić ręcznie z poziomu aplikacji Scriptable.
   - [Sprzedaż](#sprzedaż)
     - [`shoper_1.js`](#shoper_1js)
     - [`shoper_big.js`](#shoper_bigjs)
+    - [`shoper_licznik_small.js`](#shoper_licznik_smalljs)
+- [Wymagane uprawnienia API](#wymagane-uprawnienia-api)
 - [Instalacja](#instalacja)
 - [Opcje modyfikacji](#opcje-modyfikacji)
 - [Bezpieczeństwo](#bezpieczeństwo)
@@ -44,12 +46,14 @@ Widgety z tej kategorii pokazują dane sprzedażowe sklepu, takie jak:
 - sprzedaż dzisiaj,
 - średni koszyk,
 - podsumowanie ostatnich 30 dni,
-- wykres sprzedaży z ostatnich 30 dni — dostępny w wybranych wersjach.
+- wykres sprzedaży z ostatnich 30 dni — dostępny w wybranych wersjach,
+- licznik zamówień z wybranego zakresu czasu.
 
 | Plik | Kategoria | Rozmiary widgetu | Motywy | Opis |
 |---|---|---|---|---|
 | [shoper_1.js](widgety/shoper_1.js) | Sprzedaż | `medium` / `large` | `day` / `night` | Uniwersalna wersja widgetu. W trybie `large` zawiera wykres sprzedaży z ostatnich 30 dni. |
 | [shoper_big.js](widgety/shoper_big.js) | Sprzedaż | `large` | `day` / `night` | Duży, czytelny widget sprzedażowy bez wersji `medium`. |
+| [shoper_licznik_small.js](widgety/shoper_licznik_small.js) | Sprzedaż | `small` | `day` / `night` | Mały licznik zamówień z wybranego zakresu: dzisiaj, 7 dni, 14 dni albo 30 dni. |
 
 ---
 
@@ -99,6 +103,55 @@ const THEME = "night" // "night" albo "day"
 
 ---
 
+### `shoper_licznik_small.js`
+![Podgląd shoper_licznik_small](assets/licznik_small.png)
+To mały widget sprzedażowy przygotowany wyłącznie pod rozmiar `small`.
+
+Widget pokazuje liczbę zamówień z wybranego zakresu czasu. Zakres ustawiasz w skrypcie za pomocą zmiennej:
+
+```javascript
+const ORDERS_RANGE = "today"
+```
+
+Dostępne zakresy:
+
+| Wartość `ORDERS_RANGE` | Zakres danych |
+|---|---|
+| `"today"` | zamówienia z dzisiaj |
+| `"7d"` | zamówienia z ostatnich 7 dni |
+| `"14d"` | zamówienia z ostatnich 14 dni |
+| `"30d"` | zamówienia z ostatnich 30 dni |
+
+Widget obsługuje motyw jasny i ciemny:
+
+```javascript
+const THEME = "night" // "night" albo "day"
+```
+
+Domyślny czas odświeżania:
+
+```javascript
+const REFRESH_MINUTES = 120
+```
+
+---
+
+## Wymagane uprawnienia API
+
+Wymagane uprawnienia zależą od kategorii widgetów, których chcesz używać.
+
+Na ten moment repozytorium zawiera widgety z kategorii **Sprzedaż**, dlatego do ich działania potrzebny jest wyłącznie dostęp do odczytu zamówień.
+
+| Widget | Kategoria widgetu | Obszar API Shopera | Wymagane uprawnienie |
+|---|---|---|---|
+| `shoper_1.js` | Sprzedaż | Zamówienia | Odczyt |
+| `shoper_big.js` | Sprzedaż | Zamówienia | Odczyt |
+| `shoper_licznik_small.js` | Sprzedaż | Zamówienia | Odczyt |
+
+Nie nadawaj aplikacji większych uprawnień, niż są potrzebne do działania wybranego widgetu. Dla widgetów sprzedażowych wystarczy sam odczyt zamówień.
+
+---
+
 ## Instalacja
 
 Pełna instrukcja instalacji widgetów w aplikacji Scriptable znajduje się tutaj:
@@ -137,6 +190,16 @@ Instrukcja zawiera:
 | `THEME` | `night` lub `day` |
 | `USE_DEMO_DATA` | `false` lub `true` |
 | `DAYS_TO_SHOW` | `30` |
+| `REFRESH_MINUTES` | `120` |
+
+### `shoper_licznik_small.js`
+
+| Zmienna | Wartość |
+|---|---|
+| `WIDGET_SIZE` | tylko `small` |
+| `THEME` | `night` lub `day` |
+| `ORDERS_RANGE` | `today`, `7d`, `14d` lub `30d` |
+| `USE_DEMO_DATA` | `false` lub `true` |
 | `REFRESH_MINUTES` | `120` |
 
 ---
