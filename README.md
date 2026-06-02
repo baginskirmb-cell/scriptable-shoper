@@ -28,6 +28,7 @@ Odświeżenie można też wymusić ręcznie z poziomu aplikacji Scriptable.
     - [`shoper_1.js`](#shoper_1js)
     - [`shoper_big.js`](#shoper_bigjs)
     - [`shoper_licznik_small.js`](#shoper_licznik_smalljs)
+    - [`shoper_bestsellery.js`](#shoper_bestselleryjs)
 - [Wymagane uprawnienia API](#wymagane-uprawnienia-api)
 - [Instalacja](#instalacja)
 - [Opcje modyfikacji](#opcje-modyfikacji)
@@ -47,13 +48,15 @@ Widgety z tej kategorii pokazują dane sprzedażowe sklepu, takie jak:
 - średni koszyk,
 - podsumowanie ostatnich 30 dni,
 - wykres sprzedaży z ostatnich 30 dni — dostępny w wybranych wersjach,
-- licznik zamówień z wybranego zakresu czasu.
+- licznik zamówień z wybranego zakresu czasu,
+- najlepiej sprzedające się produkty z ostatnich 30 dni.
 
 | Plik | Kategoria | Rozmiary widgetu | Motywy | Opis |
 |---|---|---|---|---|
 | [shoper_1.js](widgety/shoper_1.js) | Sprzedaż | `medium` / `large` | `day` / `night` | Uniwersalna wersja widgetu. W trybie `large` zawiera wykres sprzedaży z ostatnich 30 dni. |
 | [shoper_big.js](widgety/shoper_big.js) | Sprzedaż | `large` | `day` / `night` | Duży, czytelny widget sprzedażowy bez wersji `medium`. |
 | [shoper_licznik_small.js](widgety/shoper_licznik_small.js) | Sprzedaż | `small` | `day` / `night` | Mały licznik zamówień z wybranego zakresu: dzisiaj, 7 dni, 14 dni albo 30 dni. |
+| [shoper_bestsellery.js](widgety/shoper_bestsellery.js) | Sprzedaż | `medium` / `large` | `day` / `night` | Ranking najlepiej sprzedających się produktów z ostatnich 30 dni. |
 
 ---
 
@@ -104,7 +107,9 @@ const THEME = "night" // "night" albo "day"
 ---
 
 ### `shoper_licznik_small.js`
+
 ![Podgląd shoper_licznik_small](assets/licznik_small.png)
+
 To mały widget sprzedażowy przygotowany wyłącznie pod rozmiar `small`.
 
 Widget pokazuje liczbę zamówień z wybranego zakresu czasu. Zakres ustawiasz w skrypcie za pomocą zmiennej:
@@ -136,19 +141,51 @@ const REFRESH_MINUTES = 120
 
 ---
 
+### `shoper_bestsellery.js`
+![Podgląd shoper_bestsellery](assets/bestsellery.png)
+Widget pokazuje najlepiej sprzedające się produkty z ostatnich 30 dni na podstawie danych pobieranych z API Shopera.
+
+Ranking tworzony jest według liczby sprzedanych sztuk. Przy każdym produkcie wyświetlane są:
+
+- pozycja w rankingu,
+- SKU produktu,
+- liczba sprzedanych sztuk,
+- wartość sprzedaży.
+
+Widget obsługuje rozmiary:
+
+```javascript
+const WIDGET_SIZE = "medium" // "medium" albo "large"
+```
+
+Widget obsługuje motyw jasny i ciemny:
+
+```javascript
+const THEME = "night" // "night" albo "day"
+```
+
+Domyślny czas odświeżania:
+
+```javascript
+const REFRESH_MINUTES = 120
+```
+
+---
+
 ## Wymagane uprawnienia API
 
-Wymagane uprawnienia zależą od kategorii widgetów, których chcesz używać.
+Wymagane uprawnienia zależą od konkretnego widgetu.
 
-Na ten moment repozytorium zawiera widgety z kategorii **Sprzedaż**, dlatego do ich działania potrzebny jest wyłącznie dostęp do odczytu zamówień.
+| Widget | Kategoria widgetu | Obszar API Shopera | Wymagane uprawnienie | Do czego służy |
+|---|---|---|---|---|
+| `shoper_1.js` | Sprzedaż | Zamówienia / Orders | Odczyt | Pobieranie danych sprzedażowych i zamówień z ostatnich 30 dni. |
+| `shoper_big.js` | Sprzedaż | Zamówienia / Orders | Odczyt | Pobieranie danych sprzedażowych i zamówień z ostatnich 30 dni. |
+| `shoper_licznik_small.js` | Sprzedaż | Zamówienia / Orders | Odczyt | Pobieranie liczby zamówień z wybranego zakresu czasu. |
+| `shoper_bestsellery.js` | Sprzedaż | Zamówienia / Orders | Odczyt | Pobieranie zamówień z ostatnich 30 dni. |
+| `shoper_bestsellery.js` | Sprzedaż | Produkty w zamówieniach / Order products | Odczyt | Sprawdzanie, które produkty zostały sprzedane i w jakiej ilości. |
+| `shoper_bestsellery.js` | Sprzedaż | Produkty / Products | Odczyt | Pobieranie SKU produktu oraz sprawdzanie, czy produkt jest aktywny. |
 
-| Widget | Kategoria widgetu | Obszar API Shopera | Wymagane uprawnienie |
-|---|---|---|---|
-| `shoper_1.js` | Sprzedaż | Zamówienia | Odczyt |
-| `shoper_big.js` | Sprzedaż | Zamówienia | Odczyt |
-| `shoper_licznik_small.js` | Sprzedaż | Zamówienia | Odczyt |
-
-Nie nadawaj aplikacji większych uprawnień, niż są potrzebne do działania wybranego widgetu. Dla widgetów sprzedażowych wystarczy sam odczyt zamówień.
+Nie nadawaj aplikacji większych uprawnień, niż są potrzebne do działania wybranego widgetu.
 
 ---
 
@@ -200,6 +237,16 @@ Instrukcja zawiera:
 | `THEME` | `night` lub `day` |
 | `ORDERS_RANGE` | `today`, `7d`, `14d` lub `30d` |
 | `USE_DEMO_DATA` | `false` lub `true` |
+| `REFRESH_MINUTES` | `120` |
+
+### `shoper_bestsellery.js`
+
+| Zmienna | Wartość |
+|---|---|
+| `WIDGET_SIZE` | `medium` lub `large` |
+| `THEME` | `night` lub `day` |
+| `USE_DEMO_DATA` | `false` lub `true` |
+| `DAYS_TO_SHOW` | `30` |
 | `REFRESH_MINUTES` | `120` |
 
 ---
