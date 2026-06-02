@@ -143,7 +143,7 @@ Instrukcja zawiera:
 
 ## Bezpieczeństwo
 
-Nie zapisuj danych API bezpośrednio w pliku JS, który trafia na GitHub.
+Nie zapisuj danych API bezpośrednio w pliku JS.
 
 Zawsze używaj Keychain Scriptable:
 
@@ -152,7 +152,7 @@ Keychain.set("shoper_client_id", "...")
 Keychain.set("shoper_api_token", "...")
 ```
 
-Dzięki temu repozytorium może być publiczne, a dane API pozostają tylko na Twoim urządzeniu.
+Dzięki temu zmniejszasz szanse na ich ujawnienie, nawet w przypadku utraty telefonu/tableta.
 
 ---
 
