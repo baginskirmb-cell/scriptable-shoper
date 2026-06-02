@@ -1,11 +1,21 @@
-[![Scriptable](https://img.shields.io/badge/Scriptable-iOS-blue)](https://scriptable.app/)
-[![Shoper](https://img.shields.io/badge/Shoper-API-green)](https://developers.shoper.pl/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Instrukcja](https://img.shields.io/badge/Instrukcja-instalacji-orange)](docs/INSTALACJA_SCRIPTABLE.md)
-
 # scriptable-shoper
 
 ![Podgląd projektu](assets/first.png)
+
+<p align="center">
+  <a href="https://scriptable.app/">
+    <img src="https://img.shields.io/badge/Scriptable-iOS-blue" alt="Scriptable">
+  </a>
+  <a href="https://developers.shoper.pl/">
+    <img src="https://img.shields.io/badge/Shoper-API-green" alt="Shoper">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
+  </a>
+  <a href="docs/INSTALACJA_SCRIPTABLE.md">
+    <img src="https://img.shields.io/badge/Instrukcja-instalacji-orange" alt="Instrukcja">
+  </a>
+</p>
 
 ## Widgety Shoper dla Scriptable
 
